@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 from backup_check import main, scan, compare, load_manifest
 
 
@@ -60,6 +61,7 @@ class BackupTests(unittest.TestCase):
         before = self.manifest.read_bytes()
         self.assertEqual(self.run_cli('snapshot'), 2)
         self.assertEqual(self.manifest.read_bytes(), before)
+        self.assertEqual(sorted(p.name for p in self.base.iterdir()), ['baseline.json', 'files'])
 
     def test_reject_internal_manifest(self):
         self.manifest = self.root / 'baseline.json'
@@ -81,6 +83,18 @@ class BackupTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             load_manifest(self.manifest)
 
+
+    def test_publish_failure_leaves_no_partial_baseline(self):
+        with patch('backup_check.os.link', side_effect=OSError('simulated publish failure')):
+            self.assertEqual(self.run_cli('snapshot'), 2)
+        self.assertFalse(self.manifest.exists())
+        self.assertEqual(sorted(p.name for p in self.base.iterdir()), ['files'])
+
+    def test_write_failure_cleans_up_temporary_file(self):
+        with patch('backup_check.json.dump', side_effect=OSError('simulated write failure')):
+            self.assertEqual(self.run_cli('snapshot'), 2)
+        self.assertFalse(self.manifest.exists())
+        self.assertEqual(sorted(p.name for p in self.base.iterdir()), ['files'])
 
 if __name__ == '__main__':
     unittest.main()

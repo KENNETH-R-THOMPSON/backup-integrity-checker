@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import sys
+import tempfile
 
 
 def scan(root):
@@ -57,6 +58,29 @@ def compare(expected, actual):
     }
 
 
+def write_manifest(path, data):
+    """Publish a complete baseline without replacing an existing one.
+
+    A temporary file is written in the target directory, then linked to the
+    final name using an exclusive filesystem operation. This needs hard-link
+    support on the destination filesystem.
+    """
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode='w', encoding='utf-8', dir=path.parent,
+            prefix='.' + path.name + '.', suffix='.tmp', delete=False,
+        ) as stream:
+            temporary = Path(stream.name)
+            json.dump(data, stream, indent=2, sort_keys=True)
+            stream.write('\n')
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.link(temporary, path)  # Fails if the baseline already exists.
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['snapshot', 'verify'])
@@ -71,10 +95,7 @@ def main(argv=None):
             raise ValueError('Keep the manifest outside the source directory')
         if args.command == 'snapshot':
             data = {'version': 1, 'algorithm': 'sha256', 'files': scan(args.directory)}
-            # Exclusive creation protects an earlier baseline from accidental replacement.
-            with args.manifest.open('x', encoding='utf-8') as stream:
-                json.dump(data, stream, indent=2, sort_keys=True)
-                stream.write('\n')
+            write_manifest(args.manifest, data)
             print('Recorded {} files'.format(len(data['files'])))
             return 0
         report = compare(load_manifest(args.manifest), scan(args.directory))
