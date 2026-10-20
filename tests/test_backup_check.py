@@ -1,6 +1,8 @@
 import contextlib
+import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -95,6 +97,70 @@ class BackupTests(unittest.TestCase):
             self.assertEqual(self.run_cli('snapshot'), 2)
         self.assertFalse(self.manifest.exists())
         self.assertEqual(sorted(p.name for p in self.base.iterdir()), ['files'])
+
+    def test_reject_file_modified_while_hashing(self):
+        real_sha256 = hashlib.sha256
+        target = self.root / 'note.txt'
+
+        class MutatingHash:
+            def __init__(self):
+                self.inner = real_sha256()
+
+            def update(self, data):
+                self.inner.update(data)
+                target.write_text('changed during scan', encoding='utf-8')
+
+            def hexdigest(self):
+                return self.inner.hexdigest()
+
+        with patch('backup_check.hashlib.sha256', side_effect=MutatingHash):
+            self.assertEqual(self.run_cli('snapshot'), 2)
+        self.assertFalse(self.manifest.exists())
+
+    def test_reject_file_replaced_while_hashing(self):
+        real_sha256 = hashlib.sha256
+        target = self.root / 'note.txt'
+
+        class ReplacingHash:
+            def __init__(self):
+                self.inner = real_sha256()
+
+            def update(self, data):
+                self.inner.update(data)
+                replacement = self.root / 'new.txt'
+                replacement.write_text('HELLO', encoding='utf-8')  # Same byte length as original.
+                os.replace(replacement, target)
+
+            def hexdigest(self):
+                return self.inner.hexdigest()
+
+        ReplacingHash.root = self.root
+        with patch('backup_check.hashlib.sha256', side_effect=ReplacingHash):
+            self.assertEqual(self.run_cli('snapshot'), 2)
+        self.assertFalse(self.manifest.exists())
+
+    def test_verify_rejects_change_during_hashing(self):
+        self.assertEqual(self.run_cli('snapshot'), 0)
+        original_sha256 = hashlib.sha256
+        target = self.root / 'note.txt'
+
+        class MutatingHash:
+            def __init__(self):
+                self.inner = original_sha256()
+
+            def update(self, data):
+                self.inner.update(data)
+                target.write_text('changed during verification', encoding='utf-8')
+
+            def hexdigest(self):
+                return self.inner.hexdigest()
+
+        output = io.StringIO()
+        with patch('backup_check.hashlib.sha256', side_effect=MutatingHash):
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
+                result = main(['verify', str(self.root), str(self.manifest)])
+        self.assertEqual(result, 2)
+        self.assertEqual(output.getvalue(), '')
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,8 +4,14 @@ import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
+import stat
 import sys
 import tempfile
+
+
+def file_identity(info):
+    """Metadata used to notice files changing while they are being hashed."""
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
 
 
 def scan(root):
@@ -23,11 +29,19 @@ def scan(root):
             path = Path(folder) / name
             if not path.is_file():
                 raise ValueError('Only regular files are supported: ' + str(path))
+            before = path.stat()
             digest = hashlib.sha256()
-            # Stream large backups instead of loading entire files into memory.
             with path.open('rb') as stream:
+                opened = os.fstat(stream.fileno())
+                if not stat.S_ISREG(opened.st_mode) or file_identity(before) != file_identity(opened):
+                    raise ValueError('File changed during scan: ' + str(path))
+                # Stream large backups instead of loading entire files into memory.
                 for block in iter(lambda: stream.read(1024 * 1024), b''):
                     digest.update(block)
+                finished = os.fstat(stream.fileno())
+            # Check both the open file and its path to detect edits or replacements.
+            if file_identity(opened) != file_identity(finished) or file_identity(finished) != file_identity(path.stat()):
+                raise ValueError('File changed during scan: ' + str(path))
             files[path.relative_to(root).as_posix()] = digest.hexdigest()
     return dict(sorted(files.items()))
 
