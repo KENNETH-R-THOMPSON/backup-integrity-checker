@@ -4,7 +4,14 @@ import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
+import stat
 import sys
+import tempfile
+
+
+def file_identity(info):
+    """Metadata used to notice files changing while they are being hashed."""
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
 
 
 def scan(root):
@@ -22,11 +29,19 @@ def scan(root):
             path = Path(folder) / name
             if not path.is_file():
                 raise ValueError('Only regular files are supported: ' + str(path))
+            before = path.stat()
             digest = hashlib.sha256()
-            # Stream large backups instead of loading entire files into memory.
             with path.open('rb') as stream:
+                opened = os.fstat(stream.fileno())
+                if not stat.S_ISREG(opened.st_mode) or file_identity(before) != file_identity(opened):
+                    raise ValueError('File changed during scan: ' + str(path))
+                # Stream large backups instead of loading entire files into memory.
                 for block in iter(lambda: stream.read(1024 * 1024), b''):
                     digest.update(block)
+                finished = os.fstat(stream.fileno())
+            # Check both the open file and its path to detect edits or replacements.
+            if file_identity(opened) != file_identity(finished) or file_identity(finished) != file_identity(path.stat()):
+                raise ValueError('File changed during scan: ' + str(path))
             files[path.relative_to(root).as_posix()] = digest.hexdigest()
     return dict(sorted(files.items()))
 
@@ -57,6 +72,29 @@ def compare(expected, actual):
     }
 
 
+def write_manifest(path, data):
+    """Publish a complete baseline without replacing an existing one.
+
+    A temporary file is written in the target directory, then linked to the
+    final name using an exclusive filesystem operation. This needs hard-link
+    support on the destination filesystem.
+    """
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode='w', encoding='utf-8', dir=path.parent,
+            prefix='.' + path.name + '.', suffix='.tmp', delete=False,
+        ) as stream:
+            temporary = Path(stream.name)
+            json.dump(data, stream, indent=2, sort_keys=True)
+            stream.write('\n')
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.link(temporary, path)  # Fails if the baseline already exists.
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['snapshot', 'verify'])
@@ -71,10 +109,7 @@ def main(argv=None):
             raise ValueError('Keep the manifest outside the source directory')
         if args.command == 'snapshot':
             data = {'version': 1, 'algorithm': 'sha256', 'files': scan(args.directory)}
-            # Exclusive creation protects an earlier baseline from accidental replacement.
-            with args.manifest.open('x', encoding='utf-8') as stream:
-                json.dump(data, stream, indent=2, sort_keys=True)
-                stream.write('\n')
+            write_manifest(args.manifest, data)
             print('Recorded {} files'.format(len(data['files'])))
             return 0
         report = compare(load_manifest(args.manifest), scan(args.directory))

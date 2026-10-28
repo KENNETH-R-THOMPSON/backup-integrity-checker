@@ -1,56 +1,49 @@
 # Backup Integrity Checker
 
-A personal portfolio utility that answers a practical question: did the files in a copied folder keep the same contents?
+A Python command-line utility for checking whether files in a copied folder still match a saved SHA-256 baseline. It reports changed, missing, unexpected, and unchanged files. It reads source files without modifying them and uses only Python's standard library. All example data is synthetic.
 
-It records SHA-256 fingerprints, then reports changed, missing, unexpected, and unchanged files. No third-party packages, network access, or real patient data are needed.
+## Setup and run
 
-## Run
-
-Requires Python 3.9 or newer. Run these commands from this project's folder:
+Requires Python 3.9 or newer. From the repository root:
 
 ```sh
 python3 backup_check.py snapshot sample baseline.json
 python3 backup_check.py verify sample baseline.json
+python3 backup_check.py verify sample baseline.json --format text
 python3 -m unittest discover -s tests -v
 ```
 
-The first command creates a baseline. The second prints a JSON report with one unchanged file and empty difference lists. Copy `sample` to a temporary folder, edit its CSV, then verify that folder with the same baseline to see a changed file reported.
+The first command creates `baseline.json` outside `sample`. Verification compares the sample against it. Snapshot creation refuses to replace an existing manifest. Use a fresh manifest filename for another snapshot. The manifest destination must support hard links and temporary file creation.
 
-Exit codes: `0` means success or no differences, `1` means differences found, and `2` means input or filesystem errors. Existing baselines cannot be overwritten. Store the manifest outside the folder being checked.
+Exit codes: `0` for successful snapshot or unchanged verification, `1` for content differences, and `2` for invalid input, unstable source files, or filesystem errors. JSON verification output is the default; `--format text` prints a readable report.
 
-## Readable report
+## Concurrent-change detection
 
-For an interview demonstration or a quick check, use:
-
-```sh
-python3 backup_check.py verify sample baseline.json --format text
-```
-
-This prints category counts and quoted filenames. JSON remains the default for scripts. Both formats use the same exit codes.
-
-## IntelliJ IDEA
-
-Open this folder as a project. Use its terminal to run the commands above. A Python editor integration is optional; the program and tests run with the system Python interpreter.
+The scanner compares each file's device, inode, size, modification time, and change time before and after hashing. It checks both the open file and its path to detect common concurrent edits or file replacement. If a change is detected, it stops with exit code `2` rather than publishing a misleading baseline or verification report. Regression tests simulate an in-place edit, an atomic same-size replacement, and a change during verification.
 
 ## Design and limits
 
-* Hashes are streamed in 1 MiB chunks to avoid loading large files into memory.
-* Relative paths let a baseline verify a copy in another location.
-* Symbolic links and nonregular files cause an error instead of silently leaving gaps.
-* Empty directories, permissions, ownership, and timestamps are not compared.
-* Use a stable directory or filesystem snapshot. Concurrent changes during scanning are not supported.
-* Protect your baseline separately. This tool detects content differences; it does not prove that a baseline is authentic or that a backup can restore an application.
+* SHA-256 hashing streams 1 MiB blocks rather than loading entire files into memory.
+* Relative manifest paths allow checking a copied folder in another location.
+* Symbolic links and nonregular files cause an error.
+* Snapshot publishing syncs a temporary manifest and uses an exclusive hard link to preserve existing baselines and prevent partially written final manifests.
+* Metadata checks protect each individual read. They don't guarantee a consistent multi-file snapshot or detect every adversarial modification. Use a stable filesystem snapshot for higher assurance.
+* Empty directories, permissions, ownership, and timestamps aren't compared.
+* A matching hash doesn't authenticate the baseline or prove that a backup can restore an application.
 * The tool never repairs or deletes source files.
 
-## Portfolio talking points
+## Verified tests
 
-Implemented a Python command-line utility that compares SHA-256 manifests and produces machine-readable backup verification reports. Added ten automated tests for content changes, malformed manifests, nested Unicode paths, symlinks, and accidental baseline replacement.
+On October 20, 2026, all 15 automated tests passed locally with Python 3.13.5 on Linux. A sample snapshot and JSON verification also passed. See `TEST_RESULTS.md` for the commands and results. GitHub Actions status is tracked separately; local results don't establish CI success.
 
-Interview demo: create a baseline, verify an unchanged copy, edit a file, and explain why a mismatch signals investigation rather than proving malicious activity. Discuss streaming versus reading entire files and why a trusted baseline matters.
+## Résumé bullets
 
-## Next improvements
+* Built a Python backup integrity utility using streamed SHA-256 hashes, portable JSON manifests, and machine-readable verification reports.
+* Implemented change and replacement detection during file hashing, with regression tests for concurrent edits, same-size replacements, and verification errors.
+* Added failure-safe manifest publishing and validated 15 automated tests using Python's standard library.
 
-* Atomic baseline writes for resilience to interrupted writes.
-* Stable snapshot integration and detection of files modified during scanning.
+## Interview demonstration
 
-This is an independent personal portfolio project, separate from school and team repositories.
+Create a baseline for `sample`, verify it, edit the CSV, and run verification again. Explain the difference between a hash mismatch and an unstable file detected during scanning. Discuss why a filesystem snapshot and a trusted baseline matter for reliable backup verification.
+
+Independent personal portfolio project. No school assignments, team ITAM systems, or patient records are included.
