@@ -10,12 +10,12 @@ Checks copied files against SHA-256 hashes and reports missing, changed, or extr
 ## Security Log Explorer (Java)
 [Source and documentation](https://github.com/KENNETH-R-THOMPSON/security-log-explorer)
 
-Reads example sign-in activity and identifies addresses with repeated failed login attempts. Supports rolling time windows and works in IntelliJ IDEA. The project documents 37 local checks. A GitHub Actions workflow hasn't been verified for this repository.
+Reads example sign-in activity and identifies addresses with repeated failed login attempts. Supports rolling time windows and works in IntelliJ IDEA. The project documents 37 local checks. Java 17 GitHub Actions passed on October 30, 2026: https://github.com/KENNETH-R-THOMPSON/security-log-explorer/actions/runs/41163980810
 
 ## Document Intake Automation (C#)
 [Source and documentation](https://github.com/KENNETH-R-THOMPSON/document-intake-automation)
 
-Previews how files would be organized, copies them into category folders, and checks file hashes. Original files remain unchanged. Includes a local test runner; a GitHub Actions workflow hasn't been verified for this repository.
+Previews how files would be organized, copies them into category folders, and checks file hashes. Original files remain unchanged. Includes a local test runner; .NET release build, regression tests and sample preview passed in GitHub Actions on October 30, 2026: https://github.com/KENNETH-R-THOMPSON/document-intake-automation/actions/runs/41163861050
 
 ## How to review the work
 Each project includes its own README, sample data, usage instructions and limitations. The sample files are fictional and intended for learning and demonstrations.

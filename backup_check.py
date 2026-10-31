@@ -46,9 +46,23 @@ def scan(root):
     return dict(sorted(files.items()))
 
 
+def reject_duplicate_keys(pairs):
+    """Reject JSON objects whose repeated keys could hide manifest entries."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('Duplicate manifest key: ' + key)
+        result[key] = value
+    return result
+
+
 def load_manifest(path):
-    data = json.loads(Path(path).read_text(encoding='utf-8'))
-    if not isinstance(data, dict) or data.get('version') != 1 or data.get('algorithm') != 'sha256':
+    data = json.loads(
+        Path(path).read_text(encoding='utf-8'),
+        object_pairs_hook=reject_duplicate_keys,
+    )
+    if (not isinstance(data, dict) or type(data.get('version')) is not int
+            or data['version'] != 1 or data.get('algorithm') != 'sha256'):
         raise ValueError('Unsupported manifest format')
     files = data.get('files')
     if not isinstance(files, dict):

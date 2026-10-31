@@ -15,3 +15,7 @@ Snapshot publishing now writes a temporary manifest in the destination directory
 ## 2026-10-20
 
 Integrated the concurrent-change checks prepared locally on October 19. The scanner now detects common in-place modifications and file replacements during hashing. Expanded regression coverage to 15 tests, including same-size file replacement and unstable verification scans. All 15 tests passed locally with Python 3.13.5. GitHub Actions results must be checked separately.
+
+## 2026-10-30
+
+Hardened manifest parsing to reject duplicate JSON keys at any nesting level and boolean values masquerading as the integer format version. Added two regression tests covering malformed baselines and the CLI error exit code. Earlier test results remain separately dated; GitHub Actions will verify this change.

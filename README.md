@@ -26,6 +26,7 @@ The scanner compares each file's device, inode, size, modification time, and cha
 * SHA-256 hashing streams 1 MiB blocks rather than loading entire files into memory.
 * Relative manifest paths allow checking a copied folder in another location.
 * Symbolic links and nonregular files cause an error.
+* Manifest parsing rejects duplicate JSON keys and boolean version fields instead of accepting ambiguous baselines.
 * Snapshot publishing syncs a temporary manifest and uses an exclusive hard link to preserve existing baselines and prevent partially written final manifests.
 * Metadata checks protect each individual read. They don't guarantee a consistent multi-file snapshot or detect every adversarial modification. Use a stable filesystem snapshot for higher assurance.
 * Empty directories, permissions, ownership, and timestamps aren't compared.
@@ -39,7 +40,7 @@ On October 20, 2026, all 15 automated tests passed locally with Python 3.13.5 on
 ## Résumé bullets
 
 * Built a Python backup integrity utility using streamed SHA-256 hashes, portable JSON manifests, and machine-readable verification reports.
-* Implemented change and replacement detection during file hashing, with regression tests for concurrent edits, same-size replacements, and verification errors.
+* Implemented change and replacement detection during file hashing, plus strict JSON manifest parsing to reject duplicate entries and invalid version types.
 * Added failure-safe manifest publishing and validated 15 automated tests using Python's standard library.
 
 ## Interview demonstration
