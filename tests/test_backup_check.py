@@ -86,6 +86,30 @@ class BackupTests(unittest.TestCase):
             load_manifest(self.manifest)
 
 
+    def test_reject_duplicate_json_keys(self):
+        digest = 'a' * 64
+        examples = (
+            '{"version":1,"version":1,"algorithm":"sha256","files":{}}',
+            '{"version":1,"algorithm":"sha256","files":{},"files":{}}',
+            '{"version":1,"algorithm":"sha256","files":'
+            '{"note.txt":"' + digest + '","note.txt":"' + digest + '"}}',
+        )
+        for content in examples:
+            with self.subTest(content=content):
+                self.manifest.write_text(content, encoding='utf-8')
+                with self.assertRaisesRegex(ValueError, 'Duplicate manifest key'):
+                    load_manifest(self.manifest)
+                self.assertEqual(self.run_cli('verify'), 2)
+
+    def test_reject_boolean_manifest_version(self):
+        self.manifest.write_text(
+            '{"version":true,"algorithm":"sha256","files":{}}',
+            encoding='utf-8',
+        )
+        with self.assertRaisesRegex(ValueError, 'Unsupported manifest format'):
+            load_manifest(self.manifest)
+        self.assertEqual(self.run_cli('verify'), 2)
+
     def test_publish_failure_leaves_no_partial_baseline(self):
         with patch('backup_check.os.link', side_effect=OSError('simulated publish failure')):
             self.assertEqual(self.run_cli('snapshot'), 2)
