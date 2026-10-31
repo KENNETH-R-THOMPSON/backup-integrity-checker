@@ -17,6 +17,12 @@ The first command creates `baseline.json` outside `sample`. Verification compare
 
 Exit codes: `0` for successful snapshot or unchanged verification, `1` for content differences, and `2` for invalid input, unstable source files, or filesystem errors. JSON verification output is the default; `--format text` prints a readable report.
 
+## Reproducible synthetic demo
+
+Run `python3 examples/demo.py` from the repository root. The script creates three fictional files in a temporary directory, saves a baseline, checks an unchanged copy, then simulates one changed file, one missing file, and one unexpected file. It checks the JSON results and exit codes before printing a short terminal transcript. Temporary files are cleaned up automatically.
+
+This demo doesn't read your documents or prove that a real backup can be restored. The smoke test runs with `python3 -m unittest discover -s tests -v`.
+
 ## Concurrent-change detection
 
 The scanner compares each file's device, inode, size, modification time, and change time before and after hashing. It checks both the open file and its path to detect common concurrent edits or file replacement. If a change is detected, it stops with exit code `2` rather than publishing a misleading baseline or verification report. Regression tests simulate an in-place edit, an atomic same-size replacement, and a change during verification.
