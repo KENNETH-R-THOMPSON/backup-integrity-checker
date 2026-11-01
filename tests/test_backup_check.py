@@ -76,6 +76,50 @@ class BackupTests(unittest.TestCase):
                 self.assertEqual(spreadsheet_safe_name(name), "'" + name)
         self.assertEqual(spreadsheet_safe_name('ordinary.csv'), 'ordinary.csv')
 
+    def test_windows_reparse_metadata_is_rejected(self):
+        import stat
+        from types import SimpleNamespace
+        from backup_check import is_link_or_reparse
+
+        regular = SimpleNamespace(st_mode=stat.S_IFREG, st_file_attributes=0)
+        junction = SimpleNamespace(
+            st_mode=stat.S_IFDIR,
+            st_file_attributes=stat.FILE_ATTRIBUTE_REPARSE_POINT,
+        )
+        self.assertFalse(is_link_or_reparse(regular))
+        self.assertTrue(is_link_or_reparse(junction))
+        self.assertTrue(is_link_or_reparse(SimpleNamespace(st_mode=stat.S_IFLNK)))
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows directory junctions')
+    def test_windows_junction_directory_and_root_are_rejected(self):
+        import subprocess
+
+        outside = self.base / 'outside'
+        outside.mkdir()
+        (outside / 'private.txt').write_text('fictional private file', encoding='utf-8')
+
+        def junction(link):
+            result = subprocess.run(
+                ['cmd', '/c', 'mklink', '/J', str(link), str(outside)],
+                capture_output=True, text=True, check=False,
+            )
+            if result.returncode:
+                self.skipTest('Windows junction creation unavailable: ' + result.stderr.strip())
+
+        nested = self.root / 'linked'
+        junction(nested)
+        self.assertEqual(self.run_cli('snapshot'), 2)
+        self.assertFalse(self.manifest.exists())
+        nested.rmdir()
+
+        root_link = self.base / 'linked_root'
+        junction(root_link)
+        self.root = root_link
+        self.assertEqual(self.run_cli('snapshot'), 2)
+        self.assertFalse(self.manifest.exists())
+        self.assertEqual((outside / 'private.txt').read_text(encoding='utf-8'),
+                         'fictional private file')
+
     def test_known_digest(self):
         self.assertEqual(scan(self.root)['note.txt'], '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824')
 
@@ -186,7 +230,7 @@ class BackupTests(unittest.TestCase):
         outside.mkdir()
         (outside / 'secret.txt').write_text('private example', encoding='utf-8')
         (self.root / 'nested').symlink_to(outside, target_is_directory=True)
-        with self.assertRaisesRegex(ValueError, 'Symbolic links are not supported'):
+        with self.assertRaisesRegex(ValueError, 'Links and junctions are not supported'):
             scan(self.root)
 
     def test_invalid_manifest_and_missing_directory(self):

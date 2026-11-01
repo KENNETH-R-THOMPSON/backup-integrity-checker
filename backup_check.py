@@ -15,11 +15,19 @@ def file_identity(info):
     return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
 
 
+def is_link_or_reparse(info):
+    """Reject symlinks and Windows reparse points, including junctions."""
+    return stat.S_ISLNK(info.st_mode) or bool(
+        getattr(info, 'st_file_attributes', 0)
+        & getattr(stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 0)
+    )
+
+
 def scan(root):
     root = Path(root)
-    if root.is_symlink() or not root.is_dir():
-        raise ValueError('Source must be an existing directory, not a symbolic link')
     root_before = root.stat(follow_symlinks=False)
+    if not stat.S_ISDIR(root_before.st_mode) or is_link_or_reparse(root_before):
+        raise ValueError('Source must be an existing directory, not a link or junction')
     files = {}
     def fail(error):
         raise error
@@ -36,17 +44,18 @@ def scan(root):
         for name in dirs + names:
             if folder_fd is not None:
                 entry = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
-                is_link = stat.S_ISLNK(entry.st_mode)
             else:
-                is_link = (Path(folder) / name).is_symlink()
-            if is_link:
-                raise ValueError('Symbolic links are not supported: ' + name)
+                entry = (Path(folder) / name).stat(follow_symlinks=False)
+            if is_link_or_reparse(entry):
+                raise ValueError('Links and junctions are not supported: ' + name)
         for name in sorted(names):
             path = Path(folder) / name
             if folder_fd is not None:
                 before = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
             else:
-                before = path.stat()
+                before = path.stat(follow_symlinks=False)
+            if is_link_or_reparse(before):
+                raise ValueError('Links and junctions are not supported: ' + str(path))
             if not stat.S_ISREG(before.st_mode):
                 raise ValueError('Only regular files are supported: ' + str(path))
             digest = hashlib.sha256()
@@ -72,7 +81,7 @@ def scan(root):
             if folder_fd is not None:
                 after = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
             else:
-                after = path.stat()
+                after = path.stat(follow_symlinks=False)
             if file_identity(opened) != file_identity(finished) or file_identity(finished) != file_identity(after):
                 raise ValueError('File changed during scan: ' + str(path))
             files[path.relative_to(root).as_posix()] = digest.hexdigest()
