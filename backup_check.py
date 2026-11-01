@@ -23,6 +23,14 @@ def is_link_or_reparse(info):
     )
 
 
+def validate_manifest_path(name):
+    """Require paths that can be read back on every supported platform."""
+    relative = PurePosixPath(name)
+    if (not name or relative.is_absolute() or '..' in relative.parts
+            or relative.as_posix() != name or name == '.' or '\\' in name):
+        raise ValueError('Invalid manifest path: ' + name)
+
+
 def scan(root):
     root = Path(root)
     root_before = root.stat(follow_symlinks=False)
@@ -50,6 +58,7 @@ def scan(root):
                     file_identity(folder_before) != directory_identities.get(Path(folder)))):
             raise ValueError('Directory changed during scan: ' + str(folder))
         for name in dirs + names:
+            validate_manifest_path((Path(folder) / name).relative_to(root).as_posix())
             if folder_fd is not None:
                 entry = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
             else:
@@ -126,10 +135,7 @@ def load_manifest(path):
     if not isinstance(files, dict):
         raise ValueError('Manifest files must be an object')
     for name, digest in files.items():
-        relative = PurePosixPath(name)
-        if (not name or relative.is_absolute() or '..' in relative.parts
-                or relative.as_posix() != name or name == '.' or '\\' in name):
-            raise ValueError('Invalid manifest path: ' + name)
+        validate_manifest_path(name)
         if not isinstance(digest, str) or len(digest) != 64 or any(c not in '0123456789abcdef' for c in digest):
             raise ValueError('Invalid SHA-256 digest: ' + name)
     return files
