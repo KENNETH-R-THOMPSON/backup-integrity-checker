@@ -32,7 +32,7 @@ The scanner compares each file's device, inode, size, modification time, and cha
 
 * SHA-256 hashing streams 1 MiB blocks rather than loading entire files into memory.
 * Relative manifest paths allow checking a copied folder in another location.
-* Symbolic links and nonregular files cause an error. Windows reparse points, including directory junctions, are also rejected before hashing. On Linux and macOS, `O_NOFOLLOW` rejects symlinks swapped into the final file path, and descriptor-based directory walking reduces parent-directory replacement risks. Windows uses path-based walking and file identity checks, so a concurrent directory replacement race remains possible. These checks don't make a multi-file scan atomic or prevent every adversarial rename.
+* Symbolic links and nonregular files cause an error. Windows reparse points, including directory junctions, are also rejected before hashing. On Linux and macOS, `O_NOFOLLOW` rejects symlinks swapped into the final file path, and descriptor-based directory walking reduces parent-directory replacement risks. On Windows, path-based walking also checks each directory's identity against its parent listing and rechecks the folder after processing. These checks catch some nested replacements, but a concurrent path replacement race remains possible. These checks don't make a multi-file scan atomic or prevent every adversarial rename.
 * Manifest parsing rejects duplicate JSON keys and boolean version fields instead of accepting ambiguous baselines.
 * Snapshot publishing syncs a temporary manifest and uses an exclusive hard link to preserve existing baselines and prevent partially written final manifests.
 * Metadata checks protect each individual read. They don't guarantee a consistent multi-file snapshot or detect every adversarial modification. Use a stable filesystem snapshot for higher assurance.
@@ -43,13 +43,13 @@ The scanner compares each file's device, inode, size, modification time, and cha
 
 ## Verified tests
 
-On November 1, 2026, [PR #12](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/12) added Windows junction and reparse-point rejection. Its Windows test created both nested and root junctions. [PR #13](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/13) added a temporary-file backup copy and restore exercise. All 27 tests ran in [merged-main GitHub Actions](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331757715): Linux and macOS passed 26 tests each with one Windows-only skip; Windows passed 24 with three Unix-only skips. The [PR #13 run](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331704075) also passed. The previous [25-test cross-platform run](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41326447624) is historical. Hosted tests don't establish testing on my own Mac or NAS, or restoration of a real backup.
+On November 1, 2026, [PR #15](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/15) added directory identity checks for path-based scans and two regression tests. The [merged-main GitHub Actions run](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41336856797) passed on Python 3.11 across Linux, macOS and Windows. All 29 tests ran on each runner: Linux and macOS passed 28 with one Windows-only skip; Windows passed 26 with three Unix-only skips. The [PR workflow](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41336786639) also passed. The previous [27-test run](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331757715) is historical. Hosted tests don't establish testing on my own Mac or NAS, restoration of a real backup, or complete protection against concurrent path replacement.
 
 ## Résumé bullets
 
 * Built a Python backup integrity utility using streamed SHA-256 hashes, portable JSON manifests, and machine-readable verification reports.
 * Implemented change and replacement detection during file hashing, plus strict JSON manifest parsing to reject duplicate entries and invalid version types.
-* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified 25 tests on hosted Linux and macOS, plus 22 passing and three platform-specific skips on Windows.
+* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified 29 tests per hosted runner, with one Windows-only skip on Linux and macOS and three Unix-only skips on Windows.
 
 ## Interview demonstration
 
