@@ -37,3 +37,13 @@ The [PR workflow](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker
 [Successful merged-main CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331757715) ran 27 tests on each Python 3.11 runner: 26 passed and one Windows-only test skipped on Linux and macOS; 24 passed and three Unix-specific tests skipped on Windows. The [PR run](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331704075) passed on all three systems. The prior 25-test cross-platform results are historical.
 
 This verifies a synthetic file-level restore exercise and common junction checks. It doesn't establish a real NAS restore, consistent application data, Windows path-walk race freedom, or testing on the owner's Mac.
+
+## Path-based directory identity checks, November 1, 2026
+
+[PR #15](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/15) added directory identity tracking between parent enumeration and child traversal, plus post-scan folder checks. Two regression tests exercise an unchanged nested folder and a simulated nested directory replacement. [PR CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41336786639) and [merged-main CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41336856797) completed successfully on Python 3.11.
+
+* Linux: 29 tests run, 28 passed, 1 Windows-only skip.
+* macOS: 29 tests run, 28 passed, 1 Windows-only skip.
+* Windows: 29 tests run, 26 passed, 3 Unix-only skips.
+
+These are hosted runner results using synthetic files and simulated replacements. Windows traversal remains path-based and vulnerable to some concurrent swaps. No real backup restore, owner Mac test or NAS integration was performed.
