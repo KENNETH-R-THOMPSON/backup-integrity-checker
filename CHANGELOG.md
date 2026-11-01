@@ -23,3 +23,7 @@ Hardened manifest parsing to reject duplicate JSON keys at any nesting level and
 ## 2026-11-01
 
 Rejected Windows reparse points, including directory junctions, during source and entry checks. Added metadata and Windows junction regression tests. Extended the fictional demo to verify a copied backup and a restored folder after changes to the original. All 27 tests ran in hosted Python 3.11 CI across Linux, macOS and Windows; platform-specific tests were skipped where unsupported. See [merged-main CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331757715). No real NAS or application restore was tested.
+
+## 2026-11-01 (path-based directory checks)
+
+Added parent-to-child directory identity tracking and a post-scan folder check to reduce nested directory replacement races during path-based traversal. Two tests cover unchanged nested folders and a simulated replacement. All 29 tests ran on hosted Python 3.11 across Linux, macOS and Windows; the [merged-main workflow](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41336856797) passed with platform-specific skips. Windows path traversal still isn't atomic.
