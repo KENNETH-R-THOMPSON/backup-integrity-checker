@@ -15,7 +15,7 @@ Reads example sign-in activity and identifies addresses with repeated failed log
 ## Document Intake Automation (C#)
 [Source and documentation](https://github.com/KENNETH-R-THOMPSON/document-intake-automation)
 
-Previews how files would be organized, copies them into category folders, and checks file hashes. Original files remain unchanged. Includes a local test runner; .NET Release build, 19 tests, and the fictional preview passed on hosted Linux, macOS, and Windows in GitHub Actions on October 31, 2026: https://github.com/KENNETH-R-THOMPSON/document-intake-automation/actions/runs/41188712552 . Owner Mac testing remains unverified
+Previews how files would be organized, copies them into category folders, and checks file hashes. Original files remain unchanged. Includes a local test runner; .NET Release build, 19 tests, and the fictional preview passed on hosted Linux, macOS, and Windows in GitHub Actions on October 31, 2026: https://github.com/KENNETH-R-THOMPSON/document-intake-automation/actions/runs/41188712552 . Owner Mac testing remains unverified.
 
 ## How to review the work
 Each project includes its own README, sample data, usage instructions and limitations. The sample files are fictional and intended for learning and demonstrations.
