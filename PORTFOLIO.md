@@ -5,7 +5,7 @@ Projects available for review. Code, setup instructions, test notes, and limitat
 ## Backup Integrity Checker (Python)
 [Source and documentation](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker)
 
-Checks copied files against SHA-256 hashes and reports missing, changed, or extra files. Includes safety checks for files that change during scanning. The repository documents 15 regression tests, and its GitHub Actions workflow passed on October 28, 2026.
+Checks copied files against SHA-256 hashes and reports missing, changed, or extra files. Includes safety checks for files that change during scanning. The project includes a temporary-file demo that checks JSON and CSV reports for changed, missing, unexpected, and unchanged files. All 21 tests passed on hosted Python 3.11 in GitHub Actions on October 31, 2026: https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41261128427 . A real backup restoration and testing on my Mac remain unverified.
 
 ## Security Log Explorer (Java)
 [Source and documentation](https://github.com/KENNETH-R-THOMPSON/security-log-explorer)
@@ -22,4 +22,4 @@ Each project includes its own README, sample data, usage instructions and limita
 
 I keep personal school assignments and team repositories separate. School work will be added only after its requirements and testing are complete, and team work requires permission before publication.
 
-*Last reviewed: October 29, 2026.*
+*Last reviewed: October 31, 2026.*
