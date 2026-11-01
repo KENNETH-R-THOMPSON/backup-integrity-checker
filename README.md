@@ -50,7 +50,7 @@ On November 1, 2026, [PR #17](https://github.com/KENNETH-R-THOMPSON/backup-integ
 
 * Built a Python backup integrity utility using streamed SHA-256 hashes, portable JSON manifests, and machine-readable verification reports.
 * Implemented change and replacement detection during file hashing, plus strict JSON manifest parsing to reject duplicate entries and invalid version types.
-* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified 29 tests per hosted runner, with one Windows-only skip on Linux and macOS and three Unix-only skips on Windows.
+* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified a 31-test suite on hosted Linux, macOS and Windows, with platform-specific skips.
 
 ## Interview demonstration
 
