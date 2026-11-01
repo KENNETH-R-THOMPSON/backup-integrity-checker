@@ -19,18 +19,36 @@ def scan(root):
     root = Path(root)
     if root.is_symlink() or not root.is_dir():
         raise ValueError('Source must be an existing directory, not a symbolic link')
+    root_before = root.stat(follow_symlinks=False)
     files = {}
     def fail(error):
         raise error
-    for folder, dirs, names in os.walk(root, onerror=fail):
+    # On Unix, keep each directory open while reading its children.
+    # This prevents a renamed parent directory from redirecting file opens.
+    use_dir_fd = hasattr(os, 'fwalk') and hasattr(os, 'O_NOFOLLOW')
+    if use_dir_fd:
+        folders = os.fwalk(root, onerror=fail, follow_symlinks=False)
+    else:
+        folders = ((folder, dirs, names, None)
+                   for folder, dirs, names in os.walk(root, onerror=fail))
+    for folder, dirs, names, folder_fd in folders:
+        folder_before = os.fstat(folder_fd) if folder_fd is not None else None
         for name in dirs + names:
-            if (Path(folder) / name).is_symlink():
+            if folder_fd is not None:
+                entry = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
+                is_link = stat.S_ISLNK(entry.st_mode)
+            else:
+                is_link = (Path(folder) / name).is_symlink()
+            if is_link:
                 raise ValueError('Symbolic links are not supported: ' + name)
         for name in sorted(names):
             path = Path(folder) / name
-            if not path.is_file():
+            if folder_fd is not None:
+                before = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
+            else:
+                before = path.stat()
+            if not stat.S_ISREG(before.st_mode):
                 raise ValueError('Only regular files are supported: ' + str(path))
-            before = path.stat()
             digest = hashlib.sha256()
             # Refuse a symlink swapped in after the directory walk checked it.
             # O_NOFOLLOW is available on Linux and macOS. Other platforms still
@@ -38,7 +56,11 @@ def scan(root):
             flags = os.O_RDONLY | getattr(os, 'O_BINARY', 0)
             flags |= getattr(os, 'O_NOFOLLOW', 0)
             flags |= getattr(os, 'O_NONBLOCK', 0)
-            with os.fdopen(os.open(path, flags), 'rb') as stream:
+            if folder_fd is not None:
+                descriptor = os.open(name, flags, dir_fd=folder_fd)
+            else:
+                descriptor = os.open(path, flags)
+            with os.fdopen(descriptor, 'rb') as stream:
                 opened = os.fstat(stream.fileno())
                 if not stat.S_ISREG(opened.st_mode) or file_identity(before) != file_identity(opened):
                     raise ValueError('File changed during scan: ' + str(path))
@@ -47,9 +69,19 @@ def scan(root):
                     digest.update(block)
                 finished = os.fstat(stream.fileno())
             # Check both the open file and its path to detect edits or replacements.
-            if file_identity(opened) != file_identity(finished) or file_identity(finished) != file_identity(path.stat()):
+            if folder_fd is not None:
+                after = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
+            else:
+                after = path.stat()
+            if file_identity(opened) != file_identity(finished) or file_identity(finished) != file_identity(after):
                 raise ValueError('File changed during scan: ' + str(path))
             files[path.relative_to(root).as_posix()] = digest.hexdigest()
+        if folder_fd is not None:
+            # A directory renamed or replaced during the scan is unstable.
+            if file_identity(folder_before) != file_identity(os.stat(folder, follow_symlinks=False)):
+                raise ValueError('Directory changed during scan: ' + str(folder))
+    if file_identity(root_before) != file_identity(root.stat(follow_symlinks=False)):
+        raise ValueError('Source directory changed during scan: ' + str(root))
     return dict(sorted(files.items()))
 
 
