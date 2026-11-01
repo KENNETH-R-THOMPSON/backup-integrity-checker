@@ -230,7 +230,7 @@ class BackupTests(unittest.TestCase):
         outside.mkdir()
         (outside / 'secret.txt').write_text('private example', encoding='utf-8')
         (self.root / 'nested').symlink_to(outside, target_is_directory=True)
-        with self.assertRaisesRegex(ValueError, 'Symbolic links are not supported'):
+        with self.assertRaisesRegex(ValueError, 'Links and junctions are not supported'):
             scan(self.root)
 
     def test_invalid_manifest_and_missing_directory(self):
