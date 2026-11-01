@@ -10,12 +10,13 @@ Requires Python 3.9 or newer. From the repository root:
 python3 backup_check.py snapshot sample baseline.json
 python3 backup_check.py verify sample baseline.json
 python3 backup_check.py verify sample baseline.json --format text
+python3 backup_check.py verify sample baseline.json --format csv > report.csv
 python3 -m unittest discover -s tests -v
 ```
 
 The first command creates `baseline.json` outside `sample`. Verification compares the sample against it. Snapshot creation refuses to replace an existing manifest. Use a fresh manifest filename for another snapshot. The manifest destination must support hard links and temporary file creation.
 
-Exit codes: `0` for successful snapshot or unchanged verification, `1` for content differences, and `2` for invalid input, unstable source files, or filesystem errors. JSON verification output is the default; `--format text` prints a readable report.
+Exit codes: `0` for successful snapshot or unchanged verification, `1` for content differences, and `2` for invalid input, unstable source files, or filesystem errors. JSON verification output is the default; `--format text` prints a readable report. `--format csv` prints one row per file with `status,path` columns, including unchanged files. CSV fields use standard quoting for commas and quotes in filenames. Paths beginning with spreadsheet formula characters (`=`, `+`, `-`, `@`), including after leading whitespace, receive an apostrophe prefix in CSV output to reduce spreadsheet formula injection risk. This changes the displayed path value; the JSON report preserves the exact filenames. Treat CSV exports as reports, not as input manifests.
 
 ## Reproducible synthetic demo
 
@@ -38,6 +39,7 @@ The scanner compares each file's device, inode, size, modification time, and cha
 * Empty directories, permissions, ownership, and timestamps aren't compared.
 * A matching hash doesn't authenticate the baseline or prove that a backup can restore an application.
 * The tool never repairs or deletes source files.
+* CSV reports can include filenames. Review reports before sharing them, especially when working with private directories.
 
 ## Verified tests
 
