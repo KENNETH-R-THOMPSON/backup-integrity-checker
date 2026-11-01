@@ -1,4 +1,6 @@
 """Run a repeatable backup check with synthetic files in a temporary folder."""
+import csv
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -9,9 +11,12 @@ from tempfile import TemporaryDirectory
 CHECKER = Path(__file__).resolve().parents[1] / 'backup_check.py'
 
 
-def run_checker(command, source, baseline):
+def run_checker(command, source, baseline, report_format=None):
+    arguments = [sys.executable, str(CHECKER), command, str(source), str(baseline)]
+    if report_format:
+        arguments.extend(['--format', report_format])
     return subprocess.run(
-        [sys.executable, str(CHECKER), command, str(source), str(baseline)],
+        arguments,
         capture_output=True, text=True, check=False,
     )
 
@@ -55,6 +60,21 @@ def main():
         if report != expected:
             raise RuntimeError('Unexpected difference report: ' + repr(report))
         print('Changed verification: 1 unchanged, 1 changed, 1 missing, 1 unexpected (exit 1)')
+        csv_result = run_checker('verify', source, baseline, 'csv')
+        if csv_result.returncode != 1:
+            raise RuntimeError('CSV verification should report differences with exit code 1')
+        reader = csv.DictReader(io.StringIO(csv_result.stdout))
+        rows = list(reader)
+        expected_rows = [
+            {'status': 'changed', 'path': 'inventory.csv'},
+            {'status': 'missing', 'path': 'note.txt'},
+            {'status': 'unexpected', 'path': 'extra.txt'},
+            {'status': 'unchanged', 'path': 'nested/guide.txt'},
+        ]
+        if reader.fieldnames != ['status', 'path'] or rows != expected_rows:
+            raise RuntimeError('Unexpected CSV verification report: ' + repr(rows))
+        print('CSV verification: 4 file statuses checked (exit 1)')
+        print(csv_result.stdout.rstrip())
         print('Changed: inventory.csv')
         print('Missing: note.txt')
         print('Unexpected: extra.txt')
