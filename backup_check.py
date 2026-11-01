@@ -29,6 +29,9 @@ def scan(root):
     if not stat.S_ISDIR(root_before.st_mode) or is_link_or_reparse(root_before):
         raise ValueError('Source must be an existing directory, not a link or junction')
     files = {}
+    # Remember each child directory seen by a path-based walk so a replacement
+    # between listing the parent and entering the child is noticed.
+    directory_identities = {root: file_identity(root_before)}
     def fail(error):
         raise error
     # On Unix, keep each directory open while reading its children.
@@ -40,7 +43,12 @@ def scan(root):
         folders = ((folder, dirs, names, None)
                    for folder, dirs, names in os.walk(root, onerror=fail))
     for folder, dirs, names, folder_fd in folders:
-        folder_before = os.fstat(folder_fd) if folder_fd is not None else None
+        folder_before = (os.fstat(folder_fd) if folder_fd is not None
+                         else Path(folder).stat(follow_symlinks=False))
+        if (not stat.S_ISDIR(folder_before.st_mode) or is_link_or_reparse(folder_before)
+                or (folder_fd is None and
+                    file_identity(folder_before) != directory_identities.get(Path(folder)))):
+            raise ValueError('Directory changed during scan: ' + str(folder))
         for name in dirs + names:
             if folder_fd is not None:
                 entry = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
@@ -48,6 +56,8 @@ def scan(root):
                 entry = (Path(folder) / name).stat(follow_symlinks=False)
             if is_link_or_reparse(entry):
                 raise ValueError('Links and junctions are not supported: ' + name)
+            if folder_fd is None and name in dirs:
+                directory_identities[Path(folder) / name] = file_identity(entry)
         for name in sorted(names):
             path = Path(folder) / name
             if folder_fd is not None:
@@ -85,10 +95,10 @@ def scan(root):
             if file_identity(opened) != file_identity(finished) or file_identity(finished) != file_identity(after):
                 raise ValueError('File changed during scan: ' + str(path))
             files[path.relative_to(root).as_posix()] = digest.hexdigest()
-        if folder_fd is not None:
-            # A directory renamed or replaced during the scan is unstable.
-            if file_identity(folder_before) != file_identity(os.stat(folder, follow_symlinks=False)):
-                raise ValueError('Directory changed during scan: ' + str(folder))
+        # Check the folder again after its files, including on Windows where
+        # descriptor-based directory walking is unavailable.
+        if file_identity(folder_before) != file_identity(os.stat(folder, follow_symlinks=False)):
+            raise ValueError('Directory changed during scan: ' + str(folder))
     if file_identity(root_before) != file_identity(root.stat(follow_symlinks=False)):
         raise ValueError('Source directory changed during scan: ' + str(root))
     return dict(sorted(files.items()))

@@ -76,6 +76,45 @@ class BackupTests(unittest.TestCase):
                 self.assertEqual(spreadsheet_safe_name(name), "'" + name)
         self.assertEqual(spreadsheet_safe_name('ordinary.csv'), 'ordinary.csv')
 
+    def test_path_walk_accepts_unchanged_nested_directories(self):
+        nested = self.root / 'nested'
+        nested.mkdir()
+        (nested / 'inside.txt').write_text('fictional data', encoding='utf-8')
+
+        def path_fwalk(root, **kwargs):
+            for folder, dirs, names in os.walk(root, onerror=kwargs.get('onerror')):
+                yield folder, dirs, names, None
+
+        # Exercise the path-based code path on Unix as well as Windows.
+        with patch('backup_check.os.fwalk', side_effect=path_fwalk, create=True):
+            result = scan(self.root)
+        self.assertEqual(sorted(result), ['nested/inside.txt', 'note.txt'])
+
+    def test_path_walk_rejects_replaced_nested_directory(self):
+        parent = self.root / 'nested'
+        parent.mkdir()
+        child = parent / 'child'
+        child.mkdir()
+        replacement = self.base / 'replacement'
+        replacement.mkdir()
+
+        def path_walk(*args, **kwargs):
+            yield str(self.root), ['nested'], ['note.txt']
+            yield str(parent), ['child'], []
+            # A directory changes after its parent was checked.
+            child.rmdir()
+            os.replace(replacement, child)
+            yield str(child), [], []
+
+        def path_fwalk(*args, **kwargs):
+            for folder, dirs, names in path_walk():
+                yield folder, dirs, names, None
+
+        with patch('backup_check.os.walk', side_effect=path_walk):
+            with patch('backup_check.os.fwalk', side_effect=path_fwalk, create=True):
+                with self.assertRaisesRegex(ValueError, 'Directory changed during scan'):
+                    scan(self.root)
+
     def test_windows_reparse_metadata_is_rejected(self):
         import stat
         from types import SimpleNamespace
