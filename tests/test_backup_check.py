@@ -1,4 +1,5 @@
 import contextlib
+import csv
 import hashlib
 import io
 import json
@@ -37,6 +38,43 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn('Changed: 1', output.getvalue())
         self.assertIn('"note.txt"', output.getvalue())
+
+    def test_csv_report_lists_each_file_and_escapes_spreadsheet_formulas(self):
+        (self.root / '=SUM(1,1).txt').write_text('example', encoding='utf-8')
+        (self.root / 'quarter,1.txt').write_text('keep', encoding='utf-8')
+        self.assertEqual(self.run_cli('snapshot'), 0)
+
+        (self.root / 'note.txt').write_text('changed', encoding='utf-8')
+        (self.root / 'quarter,1.txt').unlink()
+        (self.root / 'extra.txt').write_text('new', encoding='utf-8')
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main(['verify', str(self.root), str(self.manifest), '--format', 'csv'])
+        self.assertEqual(code, 1)
+        self.assertEqual(list(csv.reader(io.StringIO(output.getvalue()))), [
+            ['status', 'path'],
+            ['changed', 'note.txt'],
+            ['missing', 'quarter,1.txt'],
+            ['unexpected', 'extra.txt'],
+            ['unchanged', "'=SUM(1,1).txt"],
+        ])
+
+    def test_csv_report_for_unchanged_files_exits_zero(self):
+        self.assertEqual(self.run_cli('snapshot'), 0)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main(['verify', str(self.root), str(self.manifest), '--format', 'csv'])
+        self.assertEqual(code, 0)
+        self.assertEqual(list(csv.reader(io.StringIO(output.getvalue()))),
+                         [['status', 'path'], ['unchanged', 'note.txt']])
+
+    def test_spreadsheet_prefix_covers_whitespace_and_formula_markers(self):
+        from backup_check import spreadsheet_safe_name
+        for name in ('=cmd', '+cmd', '-cmd', '@cmd', '  =cmd', '\t+cmd'):
+            with self.subTest(name=name):
+                self.assertEqual(spreadsheet_safe_name(name), "'" + name)
+        self.assertEqual(spreadsheet_safe_name('ordinary.csv'), 'ordinary.csv')
 
     def test_known_digest(self):
         self.assertEqual(scan(self.root)['note.txt'], '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824')
