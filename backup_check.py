@@ -1,5 +1,6 @@
 """Create and verify portable SHA-256 manifests without changing source files."""
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -86,6 +87,13 @@ def compare(expected, actual):
     }
 
 
+def spreadsheet_safe_name(name):
+    """Keep a filename from being interpreted as a formula in a CSV viewer."""
+    if name.lstrip().startswith(('=', '+', '-', '@')):
+        return "'" + name
+    return name
+
+
 def write_manifest(path, data):
     """Publish a complete baseline without replacing an existing one.
 
@@ -114,7 +122,7 @@ def main(argv=None):
     parser.add_argument('command', choices=['snapshot', 'verify'])
     parser.add_argument('directory', type=Path)
     parser.add_argument('manifest', type=Path)
-    parser.add_argument('--format', choices=['json', 'text'], default='json',
+    parser.add_argument('--format', choices=['json', 'text', 'csv'], default='json',
                         help='Verification report format (default: json)')
     args = parser.parse_args(argv)
     try:
@@ -126,9 +134,20 @@ def main(argv=None):
             write_manifest(args.manifest, data)
             print('Recorded {} files'.format(len(data['files'])))
             return 0
-        report = compare(load_manifest(args.manifest), scan(args.directory))
+        expected = load_manifest(args.manifest)
+        actual = scan(args.directory)
+        report = compare(expected, actual)
         if args.format == 'json':
             print(json.dumps(report, indent=2))
+        elif args.format == 'csv':
+            writer = csv.writer(sys.stdout, lineterminator='\n')
+            writer.writerow(['status', 'path'])
+            for category in ('changed', 'missing', 'unexpected'):
+                for name in report[category]:
+                    writer.writerow([category, spreadsheet_safe_name(name)])
+            for name in sorted(expected.keys() & actual.keys()):
+                if expected[name] == actual[name]:
+                    writer.writerow(['unchanged', spreadsheet_safe_name(name)])
         else:
             print('Backup verification report')
             print('Unchanged files: {}'.format(report['unchanged']))
