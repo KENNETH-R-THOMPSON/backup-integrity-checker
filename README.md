@@ -43,13 +43,13 @@ The scanner compares each file's device, inode, size, modification time, and cha
 
 ## Verified tests
 
-On October 31, 2026, all 21 automated tests passed on hosted Python 3.11 in [GitHub Actions for the CSV demo branch](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41261128427). The prior CSV report feature also passed 21 tests on [merged main](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41256443229). The older October 20 local Linux result was 15 tests on Python 3.13.5; see `TEST_RESULTS.md`. These runs don't establish testing on my Mac or a real backup restore.
+On October 31, 2026 (Louisville time), all 23 automated tests passed on hosted Linux with Python 3.11 in [merged-main GitHub Actions](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41268940223). This includes two new file-swap tests and the synthetic backup demo. The [feature PR CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41268909094) also passed all 23 tests. Earlier 21-test runs are historical. The October 20 local Linux result was 15 tests on Python 3.13.5; see `TEST_RESULTS.md`. These runs don't establish testing on my Mac, Windows, or a real backup restore.
 
 ## Résumé bullets
 
 * Built a Python backup integrity utility using streamed SHA-256 hashes, portable JSON manifests, and machine-readable verification reports.
 * Implemented change and replacement detection during file hashing, plus strict JSON manifest parsing to reject duplicate entries and invalid version types.
-* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified 21 automated tests in GitHub Actions.
+* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified 23 automated tests in GitHub Actions.
 
 ## Interview demonstration
 
