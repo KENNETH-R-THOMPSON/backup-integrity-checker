@@ -179,6 +179,22 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(self.run_cli('verify'), 0)
         self.assertIn('nested/café.txt', load_manifest(self.manifest))
 
+    @unittest.skipIf(os.name == 'nt', 'backslash is a path separator on Windows')
+    def test_snapshot_rejects_backslash_filename(self):
+        (self.root / 'notes\\2026.txt').write_text('fictional', encoding='utf-8')
+        error = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(error):
+            code = main(['snapshot', str(self.root), str(self.manifest)])
+        self.assertEqual(code, 2)
+        self.assertIn('Invalid manifest path', error.getvalue())
+        self.assertFalse(self.manifest.exists())
+
+    @unittest.skipIf(os.name == 'nt', 'backslash is a path separator on Windows')
+    def test_snapshot_rejects_backslash_directory(self):
+        (self.root / 'folder\\archive').mkdir()
+        self.assertEqual(self.run_cli('snapshot'), 2)
+        self.assertFalse(self.manifest.exists())
+
     def test_baseline_cannot_be_overwritten(self):
         self.assertEqual(self.run_cli('snapshot'), 0)
         before = self.manifest.read_bytes()
