@@ -5,7 +5,7 @@ Projects available for review. Code, setup instructions, test notes, and limitat
 ## Backup Integrity Checker (Python)
 [Source and documentation](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker)
 
-Checks copied files against SHA-256 hashes and reports missing, changed, or extra files. The scanner detects common changes and replacements during hashing, and a fictional demo checks JSON and CSV reports. [PR #10](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/10) added hosted Linux, macOS, and Windows CI. On November 1, 2026, [merged-main CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41326447624) passed 25 tests on Linux and macOS, plus 22 on Windows with three expected Unix-only skips. A real restore, NAS use, and testing on my own Mac remain unverified.
+Checks copied files against SHA-256 hashes and reports missing, changed, or extra files. It detects common changes during hashing and rejects Windows directory junctions and reparse points. A temporary-file demo verifies a fictional backup copy, changes the original, and verifies a restored copy in another folder. [PR #12](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/12) and [PR #13](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/13) passed [merged-main Python 3.11 CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331757715): 26 passed and one skipped on hosted Linux and macOS, 24 passed and three skipped on Windows. A real restore, NAS use, and testing on my own Mac remain unverified.
 
 ## Security Log Explorer (Java)
 [Source and documentation](https://github.com/KENNETH-R-THOMPSON/security-log-explorer)
