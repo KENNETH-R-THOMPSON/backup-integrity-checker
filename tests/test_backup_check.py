@@ -112,6 +112,47 @@ class BackupTests(unittest.TestCase):
         (self.root / 'link').symlink_to(self.root / 'note.txt')
         self.assertEqual(self.run_cli('snapshot'), 2)
 
+    @unittest.skipUnless(hasattr(os, 'O_NOFOLLOW'), 'requires no-follow file opens')
+    def test_reject_symlink_swapped_in_just_before_open(self):
+        target = self.root / 'note.txt'
+        outside = self.base / 'private.txt'
+        outside.write_text('private example', encoding='utf-8')
+        original_open = os.open
+        swapped = False
+
+        def swap_before_open(path, flags, *args, **kwargs):
+            nonlocal swapped
+            if Path(path) == target and not swapped:
+                swapped = True
+                target.unlink()
+                target.symlink_to(outside)
+            return original_open(path, flags, *args, **kwargs)
+
+        with patch('backup_check.os.open', side_effect=swap_before_open):
+            with self.assertRaises(OSError):
+                scan(self.root)
+        self.assertTrue(swapped)
+        self.assertFalse(self.manifest.exists())
+
+    def test_reject_replacement_between_stat_and_open(self):
+        target = self.root / 'note.txt'
+        original_open = os.open
+        swapped = False
+
+        def swap_before_open(path, flags, *args, **kwargs):
+            nonlocal swapped
+            if Path(path) == target and not swapped:
+                swapped = True
+                replacement = self.base / 'replacement.txt'
+                replacement.write_text('hello', encoding='utf-8')
+                os.replace(replacement, target)
+            return original_open(path, flags, *args, **kwargs)
+
+        with patch('backup_check.os.open', side_effect=swap_before_open):
+            with self.assertRaisesRegex(ValueError, 'File changed during scan'):
+                scan(self.root)
+        self.assertTrue(swapped)
+
     def test_invalid_manifest_and_missing_directory(self):
         self.manifest.write_text('{')
         self.assertEqual(self.run_cli('verify'), 2)

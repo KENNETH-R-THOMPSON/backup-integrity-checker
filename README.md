@@ -32,7 +32,7 @@ The scanner compares each file's device, inode, size, modification time, and cha
 
 * SHA-256 hashing streams 1 MiB blocks rather than loading entire files into memory.
 * Relative manifest paths allow checking a copied folder in another location.
-* Symbolic links and nonregular files cause an error.
+* Symbolic links and nonregular files cause an error. On Linux and macOS, opening a file with `O_NOFOLLOW` also rejects a symlink swapped into the final path between checking and hashing. Other platforms use the file identity checks without this extra protection. A parent directory swapped during the scan remains outside this guarantee.
 * Manifest parsing rejects duplicate JSON keys and boolean version fields instead of accepting ambiguous baselines.
 * Snapshot publishing syncs a temporary manifest and uses an exclusive hard link to preserve existing baselines and prevent partially written final manifests.
 * Metadata checks protect each individual read. They don't guarantee a consistent multi-file snapshot or detect every adversarial modification. Use a stable filesystem snapshot for higher assurance.

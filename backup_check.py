@@ -32,7 +32,13 @@ def scan(root):
                 raise ValueError('Only regular files are supported: ' + str(path))
             before = path.stat()
             digest = hashlib.sha256()
-            with path.open('rb') as stream:
+            # Refuse a symlink swapped in after the directory walk checked it.
+            # O_NOFOLLOW is available on Linux and macOS. Other platforms still
+            # use the before/after identity checks, but cannot close this race.
+            flags = os.O_RDONLY | getattr(os, 'O_BINARY', 0)
+            flags |= getattr(os, 'O_NOFOLLOW', 0)
+            flags |= getattr(os, 'O_NONBLOCK', 0)
+            with os.fdopen(os.open(path, flags), 'rb') as stream:
                 opened = os.fstat(stream.fileno())
                 if not stat.S_ISREG(opened.st_mode) or file_identity(before) != file_identity(opened):
                     raise ValueError('File changed during scan: ' + str(path))
