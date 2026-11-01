@@ -43,13 +43,13 @@ The scanner compares each file's device, inode, size, modification time, and cha
 
 ## Verified tests
 
-On October 31, 2026 (Louisville time), all 23 automated tests passed on hosted Linux with Python 3.11 in [merged-main GitHub Actions](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41268940223). This includes two new file-swap tests and the synthetic backup demo. The [feature PR CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41268909094) also passed all 23 tests. Earlier 21-test runs are historical. The October 20 local Linux result was 15 tests on Python 3.13.5; see `TEST_RESULTS.md`. These runs don't establish testing on my Mac, Windows, or a real backup restore.
+On November 1, 2026 (Louisville time), all 25 automated tests passed on hosted Linux with Python 3.11 in [merged-main GitHub Actions](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41273204067). This includes tests for a parent-directory replacement, a nested directory symlink, earlier file swaps, and the synthetic backup demo. The [feature PR CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41273165817) also passed 25 tests. The earlier [23-test run](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41268940223) is historical. The October 20 local Linux result was 15 tests on Python 3.13.5; see `TEST_RESULTS.md`. These runs don't establish testing on my Mac, Windows, or a real backup restore.
 
 ## Résumé bullets
 
 * Built a Python backup integrity utility using streamed SHA-256 hashes, portable JSON manifests, and machine-readable verification reports.
 * Implemented change and replacement detection during file hashing, plus strict JSON manifest parsing to reject duplicate entries and invalid version types.
-* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified 23 automated tests in GitHub Actions.
+* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified 25 automated tests in GitHub Actions.
 
 ## Interview demonstration
 
