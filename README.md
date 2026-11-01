@@ -32,6 +32,7 @@ The scanner compares each file's device, inode, size, modification time, and cha
 
 * SHA-256 hashing streams 1 MiB blocks rather than loading entire files into memory.
 * Relative manifest paths allow checking a copied folder in another location.
+* Snapshot creation rejects Unix filenames and directory names containing a literal backslash. The manifest uses forward-slash paths, and a backslash would make the saved baseline fail validation during verification. The tool reports an error before writing that baseline.
 * Symbolic links and nonregular files cause an error. Windows reparse points, including directory junctions, are also rejected before hashing. On Linux and macOS, `O_NOFOLLOW` rejects symlinks swapped into the final file path, and descriptor-based directory walking reduces parent-directory replacement risks. On Windows, path-based walking also checks each directory's identity against its parent listing and rechecks the folder after processing. This catches some nested replacements, but concurrent path swaps remain possible. A multi-file scan isn't atomic.
 * Manifest parsing rejects duplicate JSON keys and boolean version fields instead of accepting ambiguous baselines.
 * Snapshot publishing syncs a temporary manifest and uses an exclusive hard link to preserve existing baselines and prevent partially written final manifests.
