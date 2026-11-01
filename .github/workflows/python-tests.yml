@@ -5,11 +5,13 @@ on:
     paths:
       - "backup_check.py"
       - "tests/**"
+      - "examples/**"
       - ".github/workflows/python-tests.yml"
   pull_request:
     paths:
       - "backup_check.py"
       - "tests/**"
+      - "examples/**"
       - ".github/workflows/python-tests.yml"
   workflow_dispatch:
 
