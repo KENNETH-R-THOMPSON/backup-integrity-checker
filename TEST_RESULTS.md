@@ -29,3 +29,11 @@ The updated synthetic demo, including checks for the four CSV file statuses, pas
 * Windows: 22 tests passed, 3 skipped because descriptor-based directory walking and `O_NOFOLLOW` aren't available in this environment.
 
 The [PR workflow](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41326384018) also completed successfully. Hosted macOS CI isn't a test on my own Mac. No NAS integration or real backup restoration was performed.
+
+## Windows junction checks and fictional restore, November 1, 2026
+
+[PR #12](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/12) rejects Windows reparse points, including directory junctions, using no-follow metadata. A Windows-only test created nested and root junctions and confirmed that snapshots fail without publishing a manifest. [PR #13](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/13) expanded the temporary-file demo to verify a copied backup, alter the original folder, restore the copy elsewhere, and verify the restored hashes and a sample's contents.
+
+[Successful merged-main CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331757715) ran 27 tests on each Python 3.11 runner: 26 passed and one Windows-only test skipped on Linux and macOS; 24 passed and three Unix-specific tests skipped on Windows. The [PR run](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331704075) passed on all three systems. The prior 25-test cross-platform results are historical.
+
+This verifies a synthetic file-level restore exercise and common junction checks. It doesn't establish a real NAS restore, consistent application data, Windows path-walk race freedom, or testing on the owner's Mac.

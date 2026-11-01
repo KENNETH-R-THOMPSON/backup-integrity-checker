@@ -19,3 +19,7 @@ Integrated the concurrent-change checks prepared locally on October 19. The scan
 ## 2026-10-30
 
 Hardened manifest parsing to reject duplicate JSON keys at any nesting level and boolean values masquerading as the integer format version. Added two regression tests covering malformed baselines and the CLI error exit code. Earlier test results remain separately dated; GitHub Actions will verify this change.
+
+## 2026-11-01
+
+Rejected Windows reparse points, including directory junctions, during source and entry checks. Added metadata and Windows junction regression tests. Extended the fictional demo to verify a copied backup and a restored folder after changes to the original. All 27 tests ran in hosted Python 3.11 CI across Linux, macOS and Windows; platform-specific tests were skipped where unsupported. See [merged-main CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41331757715). No real NAS or application restore was tested.
