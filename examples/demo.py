@@ -3,6 +3,7 @@ import csv
 import io
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -37,6 +38,15 @@ def main():
         if snapshot.stdout.strip() != 'Recorded 3 files':
             raise RuntimeError('Unexpected snapshot count')
         print('Snapshot: recorded 3 synthetic files')
+
+        backup_copy = workspace / 'backup_copy'
+        shutil.copytree(source, backup_copy)
+        copied = run_checker('verify', backup_copy, baseline)
+        if copied.returncode != 0 or json.loads(copied.stdout) != {
+            'missing': [], 'unexpected': [], 'changed': [], 'unchanged': 3,
+        }:
+            raise RuntimeError('Copied backup did not match the baseline')
+        print('Copied backup: 3 unchanged (exit 0)')
 
         clean = run_checker('verify', source, baseline)
         if clean.returncode != 0:
@@ -78,6 +88,19 @@ def main():
         print('Changed: inventory.csv')
         print('Missing: note.txt')
         print('Unexpected: extra.txt')
+
+        restored = workspace / 'restored_files'
+        shutil.copytree(backup_copy, restored)
+        restored_check = run_checker('verify', restored, baseline)
+        if restored_check.returncode != 0 or json.loads(restored_check.stdout) != {
+            'missing': [], 'unexpected': [], 'changed': [], 'unchanged': 3,
+        }:
+            raise RuntimeError('Restored copy did not match the baseline')
+        if (restored / 'note.txt').read_text(encoding='utf-8') != 'Fictional test data\n':
+            raise RuntimeError('Restored sample content differs')
+        if (source / 'note.txt').exists():
+            raise RuntimeError('Restore exercise unexpectedly changed the source')
+        print('Synthetic restore: 3 files verified in a separate folder (exit 0)')
         print('Demo complete. Temporary files were cleaned up.')
     return 0
 

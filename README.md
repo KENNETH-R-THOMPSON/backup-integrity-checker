@@ -20,9 +20,9 @@ Exit codes: `0` for successful snapshot or unchanged verification, `1` for conte
 
 ## Reproducible synthetic demo
 
-Run `python3 examples/demo.py` from the repository root. The script creates three fictional files in a temporary directory, saves a baseline, checks an unchanged copy, then simulates one changed file, one missing file, and one unexpected file. It checks JSON and CSV reports and exit codes, then prints the four CSV file statuses. No personal files are read. Temporary files are cleaned up automatically.
+Run `python3 examples/demo.py` from the repository root. The script creates three fictional files in a temporary directory, saves a baseline, copies the folder as a synthetic backup, and verifies that copy. It then changes and removes files in the original folder, verifies the differences, and copies the saved backup into a separate restore folder. The restored copy must match the original baseline and sample content. It checks JSON and CSV reports and exit codes. No personal files are read, and temporary files are cleaned up automatically.
 
-This demo doesn't read your documents or prove that a real backup can be restored. The smoke test runs with `python3 -m unittest discover -s tests -v`.
+This is a small file-level copy and restore exercise using invented files. It doesn't test a NAS, permissions, application databases, or restoration of a real backup. The smoke test runs with `python3 -m unittest discover -s tests -v`.
 
 ## Concurrent-change detection
 
