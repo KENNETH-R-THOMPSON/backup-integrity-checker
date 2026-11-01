@@ -122,7 +122,7 @@ class BackupTests(unittest.TestCase):
 
         def swap_before_open(path, flags, *args, **kwargs):
             nonlocal swapped
-            if Path(path) == target and not swapped:
+            if (Path(path) == target or (path == target.name and kwargs.get('dir_fd') is not None)) and not swapped:
                 swapped = True
                 target.unlink()
                 target.symlink_to(outside)
@@ -141,7 +141,7 @@ class BackupTests(unittest.TestCase):
 
         def swap_before_open(path, flags, *args, **kwargs):
             nonlocal swapped
-            if Path(path) == target and not swapped:
+            if (Path(path) == target or (path == target.name and kwargs.get('dir_fd') is not None)) and not swapped:
                 swapped = True
                 replacement = self.base / 'replacement.txt'
                 replacement.write_text('hello', encoding='utf-8')
@@ -152,6 +152,42 @@ class BackupTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'File changed during scan'):
                 scan(self.root)
         self.assertTrue(swapped)
+
+    @unittest.skipUnless(hasattr(os, 'fwalk') and hasattr(os, 'O_NOFOLLOW'),
+                         'requires descriptor-based directory walking')
+    def test_reject_parent_directory_swap_during_file_open(self):
+        nested = self.root / 'nested'
+        nested.mkdir()
+        (nested / 'inside.txt').write_text('original', encoding='utf-8')
+        outside = self.base / 'outside'
+        outside.mkdir()
+        (outside / 'inside.txt').write_text('private example', encoding='utf-8')
+        original_open = os.open
+        swapped = False
+
+        def swap_parent(path, flags, *args, **kwargs):
+            nonlocal swapped
+            if path == 'inside.txt' and kwargs.get('dir_fd') is not None and not swapped:
+                swapped = True
+                nested.rename(self.base / 'moved')
+                nested.symlink_to(outside, target_is_directory=True)
+            return original_open(path, flags, *args, **kwargs)
+
+        with patch('backup_check.os.open', side_effect=swap_parent):
+            with self.assertRaisesRegex(ValueError, 'Directory changed during scan'):
+                scan(self.root)
+        self.assertTrue(swapped)
+        self.assertFalse(self.manifest.exists())
+
+    @unittest.skipUnless(hasattr(os, 'fwalk') and hasattr(os, 'O_NOFOLLOW'),
+                         'requires descriptor-based directory walking')
+    def test_reject_nested_symlink_directory(self):
+        outside = self.base / 'outside'
+        outside.mkdir()
+        (outside / 'secret.txt').write_text('private example', encoding='utf-8')
+        (self.root / 'nested').symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, 'Symbolic links are not supported'):
+            scan(self.root)
 
     def test_invalid_manifest_and_missing_directory(self):
         self.manifest.write_text('{')
