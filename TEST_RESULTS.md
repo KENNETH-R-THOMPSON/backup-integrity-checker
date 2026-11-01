@@ -19,3 +19,13 @@ The tests use synthetic files and simulated failures. They don't establish produ
 The CSV reporting feature passed all 21 automated tests on Python 3.11 in merged-main CI: https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41256443229 .
 
 The updated synthetic demo, including checks for the four CSV file statuses, passed the unit-test job on hosted Python 3.11 in branch CI: https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41261128427 . This run checked the code before the documentation-only edits in the same pull request. The demo uses temporary fictional files; no Mac execution or actual backup restoration was verified.
+
+## Hosted cross-platform verification, November 1, 2026
+
+[PR #10](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/10) expanded the Python 3.11 workflow to hosted Ubuntu, macOS, and Windows runners without changing application code or tests. [Merged-main CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41326447624) completed successfully on all three systems.
+
+* Linux: 25 tests passed, 0 skipped.
+* macOS: 25 tests passed, 0 skipped.
+* Windows: 22 tests passed, 3 skipped because descriptor-based directory walking and `O_NOFOLLOW` aren't available in this environment.
+
+The [PR workflow](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41326384018) also completed successfully. Hosted macOS CI isn't a test on my own Mac. No NAS integration or real backup restoration was performed.
