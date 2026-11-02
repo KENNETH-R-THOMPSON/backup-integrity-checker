@@ -27,3 +27,7 @@ Rejected Windows reparse points, including directory junctions, during source an
 ## 2026-11-01 (path-based directory checks)
 
 Added parent-to-child directory identity tracking and a post-scan folder check to reduce nested directory replacement races during path-based traversal. Two tests cover unchanged nested folders and a simulated replacement. All 29 tests ran on hosted Python 3.11 across Linux, macOS and Windows; the [merged-main workflow](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41336856797) passed with platform-specific skips. Windows path traversal still isn't atomic.
+
+## 2026-11-01 (terminal-safe errors)
+
+Escaped control, Unicode formatting, and surrogate characters in CLI error messages that may include untrusted manifest filenames. Added two regression tests without changing manifest contents, hash calculations, or exit codes. [PR #19](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/19) passed [merged-main CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41372752361): 33 tests ran on each hosted Python 3.11 platform with expected skips.

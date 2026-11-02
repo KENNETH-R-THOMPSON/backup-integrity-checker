@@ -1,25 +1,27 @@
-# Kenneth Thompson | Software and Cybersecurity Projects
+# Personal software and cybersecurity portfolio
 
-Projects available for review. Code, setup instructions, test notes, and limitations are in each repository.
+These are AI-assisted personal practice projects using fictional examples. Each repository contains the source code, setup instructions, tests, and limitations. The GitHub Actions results below came from hosted runners, not my own Mac or NAS.
 
 ## Backup Integrity Checker (Python)
-[Source and documentation](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker)
 
-Checks copied files against SHA-256 hashes and reports missing, changed, or extra files. It detects common changes during hashing, rejects Windows directory junctions and reparse points, and checks nested directory identities during path-based scans. A temporary-file demo verifies a fictional backup copy, changes the original, and verifies a restored copy in another folder. [PR #15](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/15) passed [merged-main Python 3.11 CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41336856797): 28 passed and one skipped on hosted Linux and macOS, 26 passed and three skipped on Windows. A real restore, NAS use, and testing on my own Mac remain unverified.
+[Repository](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker)
 
-## Security Log Explorer (Java)
-[Source and documentation](https://github.com/KENNETH-R-THOMPSON/security-log-explorer)
+Checks a copied folder against a saved SHA-256 manifest and reports changed, missing, and extra files. It detects common file changes during hashing, rejects links and junctions, and includes a temporary-file copy-and-restore exercise. [PR #19](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/19) added terminal-safe error messages and two regression tests, raising the suite to 33. [Merged-main Python 3.11 CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41372752361) passed: 32 tests and one skip on Linux and macOS; 28 tests and five skips on Windows. A real restore, NAS use, and owner Mac testing remain unverified.
 
-Reads example sign-in activity and identifies addresses with repeated failed login attempts. Supports rolling time windows and works in IntelliJ IDEA. All 69 automated checks and the fictional CSV demonstrations passed on hosted Java 17 on November 1, 2026: https://github.com/KENNETH-R-THOMPSON/security-log-explorer/actions/runs/41321230535 . This doesn't establish live monitoring or testing on my own Mac.
+## Security Log Explorer (Java 17)
 
-## Document Intake Automation (C#)
-[Source and documentation](https://github.com/KENNETH-R-THOMPSON/document-intake-automation)
+[Repository](https://github.com/KENNETH-R-THOMPSON/security-log-explorer)
 
-Previews how files would be organized, copies them into category folders, and checks file hashes. Original files remain unchanged. Includes a local test runner; .NET Release build, 19 tests, and the fictional preview passed on hosted Linux, macOS, and Windows in GitHub Actions on October 31, 2026: https://github.com/KENNETH-R-THOMPSON/document-intake-automation/actions/runs/41188712552 . Owner Mac testing remains unverified.
+Reads fictional sign-in logs and flags addresses with repeated failures. Supports rolling time windows, quoted CSV, UTF-8 BOM headers, and JSON reports. CLI and text output escape unsafe characters. All 71 checks and sample demonstrations passed in [hosted Java 17 CI](https://github.com/KENNETH-R-THOMPSON/security-log-explorer/actions/runs/41362268297) on November 1, 2026. Live monitoring and owner Mac testing remain unverified.
 
-## How to review the work
-Each project includes its own README, sample data, usage instructions and limitations. The sample files are fictional and intended for learning and demonstrations.
+## Document Intake Automation (C#/.NET 10)
 
-I keep personal school assignments and team repositories separate. School work will be added only after its requirements and testing are complete, and team work requires permission before publication.
+[Repository](https://github.com/KENNETH-R-THOMPSON/document-intake-automation)
 
-*Last reviewed: November 1, 2026.*
+Previews file sorting, copies fictional documents into category folders, and checks copied contents using SHA-256. The read-only exact verification mode detects extra files and empty destination folders. The Release build, all 27 tests, and fictional CLI examples passed on hosted Linux, macOS, and Windows in [merged-main CI](https://github.com/KENNETH-R-THOMPSON/document-intake-automation/actions/runs/41357277707). Owner Mac/NAS testing and real document verification remain unverified.
+
+## Sharing status
+
+These are public personal repositories suitable for reviewing code and limitations. LinkedIn Projects and Featured publication haven't been verified. School assignments, team work, patient records, credentials, and private documents stay outside public project repositories.
+
+Last reviewed: November 1, 2026.
