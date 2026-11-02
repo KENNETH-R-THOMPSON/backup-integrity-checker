@@ -47,3 +47,15 @@ This verifies a synthetic file-level restore exercise and common junction checks
 * Windows: 29 tests run, 26 passed, 3 Unix-only skips.
 
 These are hosted runner results using synthetic files and simulated replacements. Windows traversal remains path-based and vulnerable to some concurrent swaps. No real backup restore, owner Mac test or NAS integration was performed.
+
+## Terminal-safe error messages, November 1, 2026
+
+[PR #19](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/19) escapes terminal controls, bidirectional formatting characters, and unpaired surrogates in CLI error messages. Two regression tests cover an unsafe fictional filename in a malformed manifest and readable ordinary filenames.
+
+[PR CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41372700804) and [merged-main CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41372752361) passed on hosted Python 3.11:
+
+* Linux: 33 run, 32 passed, 1 Windows-only skip.
+* macOS: 33 run, 32 passed, 1 Windows-only skip.
+* Windows: 33 run, 28 passed, 5 Unix-specific skips.
+
+The previous 31-test result is historical. Error escaping doesn't validate the manifest's authenticity, prevent filesystem races, or establish owner Mac, NAS, or real backup restoration testing.
