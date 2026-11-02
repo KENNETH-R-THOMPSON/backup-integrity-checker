@@ -34,7 +34,7 @@ def validate_manifest_path(name):
 
 def scan(root):
     root = Path(root)
-    root_before = root.stat(follow_symlinks=False)
+    root_before = root.lstat()
     if not stat.S_ISDIR(root_before.st_mode) or is_link_or_reparse(root_before):
         raise ValueError('Source must be an existing directory, not a link or junction')
     files = {}
@@ -53,7 +53,7 @@ def scan(root):
                    for folder, dirs, names in os.walk(root, onerror=fail))
     for folder, dirs, names, folder_fd in folders:
         folder_before = (os.fstat(folder_fd) if folder_fd is not None
-                         else Path(folder).stat(follow_symlinks=False))
+                         else Path(folder).lstat())
         if (not stat.S_ISDIR(folder_before.st_mode) or is_link_or_reparse(folder_before)
                 or (folder_fd is None and
                     file_identity(folder_before) != directory_identities.get(Path(folder)))):
@@ -63,7 +63,7 @@ def scan(root):
             if folder_fd is not None:
                 entry = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
             else:
-                entry = (Path(folder) / name).stat(follow_symlinks=False)
+                entry = (Path(folder) / name).lstat()
             if is_link_or_reparse(entry):
                 raise ValueError('Links and junctions are not supported: ' + name)
             if folder_fd is None and name in dirs:
@@ -73,7 +73,7 @@ def scan(root):
             if folder_fd is not None:
                 before = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
             else:
-                before = path.stat(follow_symlinks=False)
+                before = path.lstat()
             if is_link_or_reparse(before):
                 raise ValueError('Links and junctions are not supported: ' + str(path))
             if not stat.S_ISREG(before.st_mode):
@@ -101,7 +101,7 @@ def scan(root):
             if folder_fd is not None:
                 after = os.stat(name, dir_fd=folder_fd, follow_symlinks=False)
             else:
-                after = path.stat(follow_symlinks=False)
+                after = path.lstat()
             if file_identity(opened) != file_identity(finished) or file_identity(finished) != file_identity(after):
                 raise ValueError('File changed during scan: ' + str(path))
             files[path.relative_to(root).as_posix()] = digest.hexdigest()
@@ -109,7 +109,7 @@ def scan(root):
         # descriptor-based directory walking is unavailable.
         if file_identity(folder_before) != file_identity(os.stat(folder, follow_symlinks=False)):
             raise ValueError('Directory changed during scan: ' + str(folder))
-    if file_identity(root_before) != file_identity(root.stat(follow_symlinks=False)):
+    if file_identity(root_before) != file_identity(root.lstat()):
         raise ValueError('Source directory changed during scan: ' + str(root))
     return dict(sorted(files.items()))
 
