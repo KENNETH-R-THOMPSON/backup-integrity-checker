@@ -6,7 +6,7 @@ These are AI-assisted personal practice projects using fictional examples. Each 
 
 [Repository](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker)
 
-Checks a copied folder against a saved SHA-256 manifest and reports changed, missing, and extra files. It detects common file changes during hashing, rejects links and junctions, and includes a temporary-file copy-and-restore exercise. I added terminal-safe error messages for untrusted filenames in [PR #19](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/19). Two regression tests raised the suite to 33. [Merged-main Python 3.11 CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41372752361) passed: 32 tests and one skip on Linux and macOS; 28 tests and five skips on Windows. A real restore, NAS use, and owner Mac testing remain unverified.
+Checks a copied folder against a saved SHA-256 manifest and reports changed, missing, and extra files. It detects common file changes during hashing, rejects links and junctions, and includes a temporary-file copy-and-restore exercise. [PR #19](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/19) added terminal-safe error messages and two regression tests, raising the suite to 33. [Merged-main Python 3.11 CI](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41372752361) passed: 32 tests and one skip on Linux and macOS; 28 tests and five skips on Windows. A real restore, NAS use, and owner Mac testing remain unverified.
 
 ## Security Log Explorer (Java 17)
 
