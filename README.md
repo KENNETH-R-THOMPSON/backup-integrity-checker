@@ -40,6 +40,7 @@ The scanner compares each file's device, inode, size, modification time, and cha
 * Empty directories, permissions, ownership, and timestamps aren't compared.
 * A matching hash doesn't authenticate the baseline or prove that a backup can restore an application.
 * The tool never repairs or deletes source files.
+* CLI errors escape terminal control characters, Unicode formatting characters and unpaired surrogates in untrusted filenames or filesystem error text. Ordinary filenames remain readable. This doesn't make a file safe to open.
 * CSV reports can include filenames. Review reports before sharing them, especially when working with private directories.
 
 ## Verified tests
