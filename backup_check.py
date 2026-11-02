@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 import stat
 import sys
 import tempfile
+import unicodedata
 
 
 def file_identity(info):
@@ -180,6 +181,20 @@ def write_manifest(path, data):
         if temporary is not None:
             temporary.unlink(missing_ok=True)
 
+def safe_error_text(message):
+    """Escape control and formatting characters before printing CLI errors."""
+    parts = []
+    for char in message:
+        category = unicodedata.category(char)
+        if category in ('Cc', 'Cf', 'Cs', 'Zl', 'Zp'):
+            parts.append(char.encode('unicode_escape').decode('ascii'))
+        elif char == '\\':
+            parts.append('\\\\')
+        else:
+            parts.append(char)
+    return ''.join(parts)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['snapshot', 'verify'])
@@ -221,7 +236,7 @@ def main(argv=None):
                     print('  ' + json.dumps(name, ensure_ascii=False))
         return int(any(report[key] for key in ('missing', 'unexpected', 'changed')))
     except (OSError, ValueError) as error:
-        print('Error: ' + str(error), file=sys.stderr)
+        print('Error: ' + safe_error_text(str(error)), file=sys.stderr)
         return 2
 
 
