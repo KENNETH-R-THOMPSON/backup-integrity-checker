@@ -25,6 +25,31 @@ class BackupTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             return main([command, str(self.root), str(self.manifest)])
 
+    def test_cli_error_escaping_preserves_readable_names(self):
+        from backup_check import safe_error_text
+        unsafe = 'backup' + '\x1b[31m' + '\n' + '\u202e' + '\\' + 'café'
+        self.assertEqual(
+            safe_error_text(unsafe),
+            r'backup\x1b[31m\n\u202e\\café',
+        )
+        self.assertEqual(safe_error_text('ordinary-file.txt'), 'ordinary-file.txt')
+
+    def test_verify_error_does_not_print_terminal_controls(self):
+        unsafe_name = 'fictional' + '\x1b[31m' + '\u202e'
+        self.manifest.write_text(
+            json.dumps({'version': 1, 'algorithm': 'sha256',
+                        'files': {unsafe_name: 'invalid-hash'}}),
+            encoding='utf-8',
+        )
+        output, error = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(error):
+            code = main(['verify', str(self.root), str(self.manifest)])
+        self.assertEqual(code, 2)
+        self.assertEqual(output.getvalue(), '')
+        self.assertNotIn('\x1b', error.getvalue())
+        self.assertNotIn('\u202e', error.getvalue())
+        self.assertIn(r'fictional\x1b[31m\u202e', error.getvalue())
+
     def test_text_report_and_default_json(self):
         self.assertEqual(self.run_cli('snapshot'), 0)
         output = io.StringIO()
