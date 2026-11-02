@@ -218,14 +218,15 @@ def main(argv=None):
         if args.format == 'json':
             print(json.dumps(report, indent=2))
         elif args.format == 'csv':
+            # Escape terminal controls if a report is printed rather than redirected.
             writer = csv.writer(sys.stdout, lineterminator='\n')
             writer.writerow(['status', 'path'])
             for category in ('changed', 'missing', 'unexpected'):
                 for name in report[category]:
-                    writer.writerow([category, spreadsheet_safe_name(name)])
+                    writer.writerow([category, safe_error_text(spreadsheet_safe_name(name))])
             for name in sorted(expected.keys() & actual.keys()):
                 if expected[name] == actual[name]:
-                    writer.writerow(['unchanged', spreadsheet_safe_name(name)])
+                    writer.writerow(['unchanged', safe_error_text(spreadsheet_safe_name(name))])
         else:
             print('Backup verification report')
             print('Unchanged files: {}'.format(report['unchanged']))
@@ -233,7 +234,7 @@ def main(argv=None):
                 print('{}: {}'.format(category.title(), len(report[category])))
                 for name in report[category]:
                     # Escape control characters so filenames cannot forge report lines.
-                    print('  ' + json.dumps(name, ensure_ascii=False))
+                    print('  ' + json.dumps(safe_error_text(name), ensure_ascii=False))
         return int(any(report[key] for key in ('missing', 'unexpected', 'changed')))
     except (OSError, ValueError) as error:
         print('Error: ' + safe_error_text(str(error)), file=sys.stderr)
