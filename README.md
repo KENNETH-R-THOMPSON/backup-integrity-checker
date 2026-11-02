@@ -45,13 +45,15 @@ The scanner compares each file's device, inode, size, modification time, and cha
 
 ## Verified tests
 
-On November 1, 2026, [PR #17](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/17) fixed a snapshot portability bug: Unix filenames or directories with a literal backslash could produce manifests that verification later rejected. Two regression tests cover the failure and confirm no baseline is published. All 31 tests ran on hosted Python 3.11 in [merged-main GitHub Actions](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41341400605): Linux and macOS passed 30 with one Windows-only skip each; Windows passed 26 with five expected Unix-specific skips. The [PR workflow](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41341333747) also passed on all three systems. The earlier [29-test run](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41336856797) is historical. Hosted testing doesn't establish testing on my own Mac or NAS, restoration of a real backup, or complete protection against concurrent path replacement.
+On November 2, 2026, [PR #21](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/pull/21) escaped control and Unicode formatting characters in text and CSV filenames, with two regression tests for fictional changed and unchanged paths. All **35 tests** ran on hosted Python 3.11 in [PR GitHub Actions](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41437298761). Linux and macOS passed 34 with one expected Windows-only skip each; Windows passed 30 with five Unix-specific skips. The PR merged at `2b13344`. The first CI attempt failed because the new fixtures used literal backslashes instead of control characters; the corrected fixtures passed on all three platforms. Merged-main CI for this change has not been independently verified here.
+
+The previous [33-test result](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41372752361) and [31-test result](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41341400605) are historical. Hosted testing doesn't establish testing on my own Mac or NAS, restoration of a real backup, or complete protection against concurrent path replacement.
 
 ## Résumé bullets
 
 * Built a Python backup integrity utility using streamed SHA-256 hashes, portable JSON manifests, and machine-readable verification reports.
 * Implemented change and replacement detection during file hashing, plus strict JSON manifest parsing to reject duplicate entries and invalid version types.
-* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified a 31-test suite on hosted Linux, macOS and Windows, with platform-specific skips.
+* Added failure-safe manifest publishing, a repeatable fictional demo, and CSV reporting with formula-safe filenames; verified a 35-test suite on hosted Linux, macOS and Windows, with platform-specific skips.
 
 ## Interview demonstration
 
