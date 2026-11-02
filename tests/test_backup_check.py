@@ -52,7 +52,7 @@ class BackupTests(unittest.TestCase):
 
     def test_csv_and_text_reports_escape_filename_controls(self):
         # Use a synthetic manifest path so this test works on Windows too.
-        name = "fictional\\x1b[31m\\u202e\\n.csv"
+        name = "fictional\x1b[31m\u202e\n.csv"
         self.manifest.write_text(json.dumps({
             'version': 1, 'algorithm': 'sha256', 'files': {name: 'a' * 64},
         }), encoding='utf-8')
@@ -65,10 +65,10 @@ class BackupTests(unittest.TestCase):
                                      '--format', output_format])
                     self.assertEqual(code, 1)
                     report = output.getvalue()
-                    self.assertNotIn('\\x1b', report)
-                    self.assertNotIn('\\u202e', report)
-                    self.assertNotIn('\\n.csv', report)
-                    escaped = r'fictional\\x1b[31m\\u202e\\n.csv'
+                    self.assertNotIn('\x1b', report)
+                    self.assertNotIn('\u202e', report)
+                    self.assertNotIn('\n.csv', report)
+                    escaped = r'fictional\x1b[31m\u202e\n.csv'
                     if output_format == 'csv':
                         self.assertIn(['changed', escaped],
                                       list(csv.reader(io.StringIO(report))))
@@ -76,7 +76,7 @@ class BackupTests(unittest.TestCase):
                         self.assertIn(json.dumps(escaped), report)
 
     def test_csv_unchanged_filename_escapes_controls(self):
-        name = "fictional\\x1b[31m\\u202e.csv"
+        name = "fictional\x1b[31m\u202e.csv"
         self.manifest.write_text(json.dumps({
             'version': 1, 'algorithm': 'sha256', 'files': {name: 'a' * 64},
         }), encoding='utf-8')
@@ -88,7 +88,7 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(list(csv.reader(io.StringIO(output.getvalue()))), [
             ['status', 'path'],
-            ['unchanged', r'fictional\\x1b[31m\\u202e.csv'],
+            ['unchanged', r'fictional\x1b[31m\u202e.csv'],
         ])
 
     def test_text_report_and_default_json(self):
