@@ -50,6 +50,47 @@ class BackupTests(unittest.TestCase):
         self.assertNotIn('\u202e', error.getvalue())
         self.assertIn(r'fictional\x1b[31m\u202e', error.getvalue())
 
+    def test_csv_and_text_reports_escape_filename_controls(self):
+        # Use a synthetic manifest path so this test works on Windows too.
+        name = "fictional\\x1b[31m\\u202e\\n.csv"
+        self.manifest.write_text(json.dumps({
+            'version': 1, 'algorithm': 'sha256', 'files': {name: 'a' * 64},
+        }), encoding='utf-8')
+        with patch('backup_check.scan', return_value={name: 'b' * 64}):
+            for output_format in ('csv', 'text'):
+                with self.subTest(output_format=output_format):
+                    output = io.StringIO()
+                    with contextlib.redirect_stdout(output):
+                        code = main(['verify', str(self.root), str(self.manifest),
+                                     '--format', output_format])
+                    self.assertEqual(code, 1)
+                    report = output.getvalue()
+                    self.assertNotIn('\\x1b', report)
+                    self.assertNotIn('\\u202e', report)
+                    self.assertNotIn('\\n.csv', report)
+                    escaped = r'fictional\\x1b[31m\\u202e\\n.csv'
+                    if output_format == 'csv':
+                        self.assertIn(['changed', escaped],
+                                      list(csv.reader(io.StringIO(report))))
+                    else:
+                        self.assertIn(json.dumps(escaped), report)
+
+    def test_csv_unchanged_filename_escapes_controls(self):
+        name = "fictional\\x1b[31m\\u202e.csv"
+        self.manifest.write_text(json.dumps({
+            'version': 1, 'algorithm': 'sha256', 'files': {name: 'a' * 64},
+        }), encoding='utf-8')
+        output = io.StringIO()
+        with patch('backup_check.scan', return_value={name: 'a' * 64}):
+            with contextlib.redirect_stdout(output):
+                code = main(['verify', str(self.root), str(self.manifest),
+                             '--format', 'csv'])
+        self.assertEqual(code, 0)
+        self.assertEqual(list(csv.reader(io.StringIO(output.getvalue()))), [
+            ['status', 'path'],
+            ['unchanged', r'fictional\\x1b[31m\\u202e.csv'],
+        ])
+
     def test_text_report_and_default_json(self):
         self.assertEqual(self.run_cli('snapshot'), 0)
         output = io.StringIO()
