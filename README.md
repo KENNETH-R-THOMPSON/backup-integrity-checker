@@ -49,6 +49,10 @@ On November 2, 2026, [PR #21](https://github.com/KENNETH-R-THOMPSON/backup-integ
 
 The previous [33-test result](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41372752361) and [31-test result](https://github.com/KENNETH-R-THOMPSON/backup-integrity-checker/actions/runs/41341400605) are historical. Hosted testing doesn't establish testing on my own Mac or NAS, restoration of a real backup, or complete protection against concurrent path replacement.
 
+### Verified on the target MacBook
+
+On November 3, 2026, I updated my local clone to commit `554bbfa` and ran the full unit suite with Apple system Python 3.9.6. It reported **35 tests run, 34 passed and one Windows-only skip**, with no failures. I also ran the fictional snapshot, verification, CSV and temporary restore demonstration successfully. See the [full reproducible Mac demo transcript](docs/MAC_DEMO_2026-11-03.md). This is a controlled file-level practice test, not evidence of restoring a real NAS backup.
+
 ## Résumé bullets
 
 * Built a Python backup integrity utility using streamed SHA-256 hashes, portable JSON manifests, and machine-readable verification reports.
